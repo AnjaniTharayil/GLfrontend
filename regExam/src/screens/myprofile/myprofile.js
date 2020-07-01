@@ -11,6 +11,7 @@ import {
     Dimensions
 } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage'
+import { RNToasty } from 'react-native-toasty'
 
 export default class ProfileCardView extends Component {
 
@@ -21,6 +22,10 @@ export default class ProfileCardView extends Component {
     logout() {
         AsyncStorage.clear();
         this.props.navigation.navigate('Login')
+        RNToasty.Success({
+            title: 'Logout Successfully',
+        });
+
     }
     render() {
         return (

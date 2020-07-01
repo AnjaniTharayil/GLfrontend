@@ -8,9 +8,13 @@ import {
     TouchableHighlight,
     Image,
     Alert,
-    Dimensions
+    Dimensions,
+    ToastAndroid,
+    Platform,
+    AlertIOS,
 } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage'
+import { RNToasty } from 'react-native-toasty'
 export default class LoginView extends Component {
 
     constructor(props) {
@@ -18,40 +22,90 @@ export default class LoginView extends Component {
         this.state = {
             email: '',
             password: '',
-            gender: ''
-
+            emailerror: 'Email is Not Valid',
+            passworderror: 'Password is Not Valid',
+            is_valid: false,
+            message: null,
+            error_message: 'Invalid Credentials',
+            email_error_status: false,
+            password_error_status: false
         }
     }
     saveToken(token) {
         try {
             AsyncStorage.setItem('usertoken', token)
             this.props.navigation.navigate('Home')
+            RNToasty.Success({
+                title: 'Success',
+            });
+            this.setState({ password_error_status: false, email_error_status: false })
+
+
         } catch (e) {
             console.log(error)
         }
     }
-    onClickListener = (viewId) => {
+    validateEmail = (text) => {
+        console.log(text);
+        let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+        if (reg.test(text) === false) {
+            this.setState({ email: text, emailerror: 'Email is Not Valid', email_error_status: true })
+            return false;
+        }
+        else {
+            this.setState({ email: text, emailerror: '', email_error_status: false })
+        }
+    }
+    validatePassword = (text) => {
+        if (text === '') {
+            this.setState({ password: text, passworderror: "Password is not valid", password_error_status: true })
+            return false;
+        }
+        else {
+            this.setState({ password: text, passworderror: '', password_error_status: false })
+        }
+    }
 
-        const url = "http://10.0.2.2:8000/api/auth/login/";
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                username: this.state.email,
-                password: this.state.password,
+    onClickListener() {
+        if (this.state.emailerror == '' && this.state.passworderror == '') {
+            this.setState({ error_message: '' })
+            const url = "http://10.0.2.2:8000/api/auth/login/";
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: this.state.email,
+                    password: this.state.password,
+                })
             })
-        })
-            .then((response) => response.json())
-            .then((res) => {
-                console.log(res['token'])
-                this.saveToken(res['token'])
-            })
-            .catch((error) => {
-                console.error(error);
+                .then((response) => response.json())
+                .then((res) => {
+                    console.log(res['token'])
+                    if (res['token'] != null)
+                        this.saveToken(res['token'])
+                    else
+                        RNToasty.Error({
+                            title: 'Invalid Credentials',
+                        });
+
+                })
+                .catch((error) => {
+                    this.setState({ error_message: error })
+                    console.error(error);
+                    RNToasty.Error({
+                        title: error,
+                    });
+                });
+        }
+        else {
+            RNToasty.Error({
+                title: this.state.error_message,
             });
+
+        }
     }
 
 
@@ -63,30 +117,46 @@ export default class LoginView extends Component {
                     <View style={styles.title}>
                         <Text style={styles.titletext}>GL Infotech</Text>
                     </View>
-                    <View style={styles.inputContainer}>
-                        <TextInput style={styles.inputs}
-                            ref='email'
-                            placeholder="Username"
-                            keyboardType="email-address"
-                            underlineColorAndroid='transparent'
-                            autoFocus={true}
-                            onSubmitEditing={() => {
-                                this.refs.password.focus();
-                            }}
-                            onChangeText={(email) => this.setState({ email })} />
+                    <View style={styles.Container}>
+                        <View style={styles.inputContainer}>
+                            <TextInput style={styles.inputs}
+                                ref='email'
+                                placeholder="Username"
+                                keyboardType="email-address"
+                                underlineColorAndroid='transparent'
+                                autoFocus={true}
+                                onSubmitEditing={() => {
+                                    this.refs.password.focus();
+                                }}
+                                onChangeText={(email) => this.validateEmail(email)} />
+                        </View>
+                        {this.state.email_error_status == true ? (
+                            <Text style={styles.errorMessage}>
+                                {this.state.emailerror}
+                            </Text>
+                        ) : null}
+                    </View>
+                    <View style={styles.Container}>
+                        <View style={styles.inputContainer}>
+                            <TextInput style={styles.inputs}
+                                ref='password'
+                                placeholder="Password"
+                                secureTextEntry={true}
+                                underlineColorAndroid='transparent'
+                                // autoFocus={true}
+                                onChangeText={(password) => this.validatePassword(password)}
+                                onSubmitEditing={() => {
+                                    this.refs.password.focus();
+                                }} />
+                        </View>
+                        {this.state.password_error_status == true ? (
+                            <Text style={styles.errorMessage}>
+                                {this.state.passworderror}
+                            </Text>
+                        ) : null}
                     </View>
 
-                    <View style={styles.inputContainer}>
-                        <TextInput style={styles.inputs}
-                            ref='password'
-                            placeholder="Password"
-                            secureTextEntry={true}
-                            underlineColorAndroid='transparent'
-                            // autoFocus={true}
-                            onChangeText={(password) => this.setState({ password })} />
-                    </View>
-
-                    <TouchableHighlight style={[styles.buttonContainer, styles.loginButton]} onPress={() => this.onClickListener('login')}>
+                    <TouchableHighlight style={[styles.buttonContainer, styles.loginButton]} onPress={() => this.onClickListener()}>
                         <Text style={styles.loginText}>Login</Text>
                     </TouchableHighlight>
 
@@ -114,6 +184,9 @@ const styles = StyleSheet.create({
         width: Dimensions.get('window').width - 50,
         height: Dimensions.get('window').height
     },
+    Container: {
+        marginBottom: 10
+    },
     title: {
         marginTop: Dimensions.get('window').height / 8,
         backgroundColor: '#fff',
@@ -133,10 +206,13 @@ const styles = StyleSheet.create({
 
     },
 
+    errorMessage: {
+        fontSize: 12,
+        color: "red",
+    },
     inputContainer: {
         width: Dimensions.get('window').width - 100,
         height: 45,
-        marginBottom: 20,
         flexDirection: 'row',
         alignItems: 'center'
     },
@@ -153,6 +229,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
+        marginTop: 20,
         width: Dimensions.get('window').width - 100,
     },
     loginButton: {

@@ -79,6 +79,8 @@ target 'regExam' do
 
   pod 'RNVectorIcons', :path => '../node_modules/react-native-vector-icons'
 
+  pod 'RNToasty', :path => '../node_modules/react-native-toasty'
+
   target 'regExamTests' do
     inherit! :complete
     # Pods for testing
