@@ -48,17 +48,23 @@ export default class LoginView extends Component {
     validateEmail = (text) => {
         console.log(text);
         let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-        if (reg.test(text) === false) {
-            this.setState({ email: text, emailerror: 'Email is Not Valid', email_error_status: true })
+        if (text === '') {
+           
+            this.setState({ email: text, emailerror: 'Username Field is required', email_error_status: true })
             return false;
         }
-        else {
-            this.setState({ email: text, emailerror: '', email_error_status: false })
-        }
+        else
+            if (reg.test(text) === false) {
+                this.setState({ email: text, emailerror: 'Username is Not Valid', email_error_status: true })
+                return false;
+            }
+            else {
+                this.setState({ email: text, emailerror: '', email_error_status: false })
+            }
     }
     validatePassword = (text) => {
         if (text === '') {
-            this.setState({ password: text, passworderror: "Password is not valid", password_error_status: true })
+            this.setState({ password: text, passworderror: "Password Field is Required", password_error_status: true })
             return false;
         }
         else {
@@ -67,6 +73,8 @@ export default class LoginView extends Component {
     }
 
     onClickListener() {
+        this.validatePassword(this.state.password)
+        this.validateEmail(this.state.email)
         if (this.state.emailerror == '' && this.state.passworderror == '') {
             this.setState({ error_message: '' })
             const url = "http://10.0.2.2:8000/api/auth/login/";
@@ -156,7 +164,7 @@ export default class LoginView extends Component {
                         ) : null}
                     </View>
 
-                    <TouchableHighlight style={[styles.buttonContainer, styles.loginButton]} onPress={() => this.onClickListener()}>
+                    <TouchableHighlight style={[styles.buttonContainer, styles.loginButton]} onPress={() => this.onClickListener('login')}>
                         <Text style={styles.loginText}>Login</Text>
                     </TouchableHighlight>
 
